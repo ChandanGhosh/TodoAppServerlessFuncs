@@ -1,0 +1,30 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30320.27
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TodoAppServerlessFuncs", "TodoAppServerlessFuncs.csproj", "{480B873F-1005-4266-B6C3-EB38CF70F812}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D257426F-66B7-4B03-9432-20B1B667705F}"
+	ProjectSection(SolutionItems) = preProject
+		Readme.md = Readme.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{480B873F-1005-4266-B6C3-EB38CF70F812}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{480B873F-1005-4266-B6C3-EB38CF70F812}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{480B873F-1005-4266-B6C3-EB38CF70F812}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{480B873F-1005-4266-B6C3-EB38CF70F812}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C686A042-B696-4B46-8BEE-1A5A1A4EB17E}
+	EndGlobalSection
+EndGlobal

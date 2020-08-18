@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Todo App</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <section class="hero is-primary">
+      <div class="hero-body">
+        <div class="container">
+          <h1 class="title is-1">Azure Functions todo list</h1>
+          <p class="subtitle">Use serverless functions!</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <main id="app">
+        <div class="field">
+          <div class="row control is-3">
+            <input
+              class="input is-primary"
+              type="text"
+              placeholder="Add todo"
+              v-model="newTask"
+              v-on:keydown.enter="addTodo"
+            />
+          </div>
+        </div>
+        <div class="row" v-for="todo in todos" :key="todo.id">
+          <label for="todoitem" class="checkbox">
+            <input
+              type="checkbox"
+              name="todoitem"
+              id="todoitem"
+              v-model="todo.isCompleted"
+              @change="updateTodo(todo)"
+            />
+            <span v-bind:class="{completed: todo.isCompleted }">
+              {{todo.description}}
+            </span>
+          </label>
+          <a v-if="todo.isCompleted" @click="deleteTodo(todo)"
+            ><i class="fa fa-trash"></i
+          ></a>
+        </div>
+        <div class="row" v-if="error">
+          <div class="has-background-danger" role="alert">
+            <h3 class="subtitle">{{error}}</h3>
+          </div>
+        </div>
+      </main>
+    </section>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
