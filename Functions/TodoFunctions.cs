@@ -33,6 +33,20 @@ namespace TodoAppServerlessFuncs.Functions
             return new OkObjectResult(segment.Select(Mappings.MapToTodo));
         }
 
+        [FunctionName("GetTodoById")]
+        public static async Task<IActionResult> GetTodoById(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "todo/{id}")] HttpRequest req,
+            [Table("todos", "TODO", "{id}", Connection = "AzureWebJobsStorage")] TodoTableEntity todoTableEntity,
+            ILogger logger, string id)
+        {
+            logger.LogInformation("Get a todo by id");
+
+            if (todoTableEntity == null) return new NotFoundResult();
+
+            return new OkObjectResult(await Task.FromResult(todoTableEntity.MapToTodo()));
+
+        }
+
         [FunctionName("AddTodo")]
         public static async Task<IActionResult> AddTodo(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route ="todo")]HttpRequest req,
@@ -72,21 +86,7 @@ namespace TodoAppServerlessFuncs.Functions
             await todoTable.ExecuteAsync(replaceOperation);
 
             return new OkObjectResult(existingTodo.MapToTodo());
-        }
-
-        [FunctionName("GetTodoById")]
-        public static async Task<IActionResult> GetTodoById(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route ="todo/{id}")]HttpRequest req,
-            [Table("todos", "TODO", "{id}", Connection ="AzureWebJobsStorage")] TodoTableEntity todoTableEntity,
-            ILogger logger, string id)
-        {
-            logger.LogInformation("Get a todo by id");
-            
-            if (todoTableEntity == null) return new NotFoundResult();
-
-            return new OkObjectResult(await Task.FromResult(todoTableEntity.MapToTodo()));
-
-        }
+        }      
 
         [FunctionName("DeleteTodo")]
         public static async Task<IActionResult> DeleteTodo(
@@ -95,7 +95,8 @@ namespace TodoAppServerlessFuncs.Functions
             ILogger logger, string id)
         {
             logger.LogInformation("Delete a todo by id");
-            var deleteOperation = TableOperation.Delete(new TableEntity() { PartitionKey = "TODO", RowKey = id, ETag = "*" });
+            //ETag helps in optimistic concurrency checks. Here we are simply deleting not checking for data consistency though for simplicity.
+            var deleteOperation = TableOperation.Delete(new TableEntity() { PartitionKey = "TODO", RowKey = id, ETag = "*" }); 
 
             try
             {
