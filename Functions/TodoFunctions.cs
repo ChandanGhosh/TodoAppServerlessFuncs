@@ -50,7 +50,8 @@ namespace TodoAppServerlessFuncs.Functions
         [FunctionName("AddTodo")]
         public static async Task<IActionResult> AddTodo(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route ="todo")]HttpRequest req,
-            [Table("todos", "AzureWebJobsStorage")] IAsyncCollector<TodoTableEntity> todoTable,
+            [Table("todos", Connection = "AzureWebJobsStorage")] IAsyncCollector<TodoTableEntity> todoTable,
+            [Queue("todos", Connection ="AzureWebJobsStorage")] IAsyncCollector<Todo> todoQueue,
             ILogger logger)
         {
             logger.LogInformation("Creating a new todo");
@@ -62,6 +63,9 @@ namespace TodoAppServerlessFuncs.Functions
             };
 
             await todoTable.AddAsync(todo.MapToTableEntity());
+            logger.LogInformation("Added todo to the table storage");
+            await todoQueue.AddAsync(todo);
+            logger.LogInformation("Added todo to the storage queue");
             return new OkObjectResult(todo);
         }
 
