@@ -12,26 +12,31 @@ using System.Text.Json;
 using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
+using Microsoft.Azure.Cosmos.Table;
 
 namespace TodoAppServerlessFuncs.Functions
 {
     public static class TodoFunctions
     {
-        private static readonly IList<Todo> Todos = new List<Todo>();
+        
         private static readonly JsonSerializerOptions options = new JsonSerializerOptions() { PropertyNameCaseInsensitive = true };
 
         [FunctionName("GetTodos")]
         public static async Task<IActionResult> GetTodos(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "todo")] HttpRequest req,
+            [Table("todos", "AzureWebJobsStorage")] CloudTable todoTable,
             ILogger log)
         {
             log.LogInformation("Getting all todos.");
-            return new OkObjectResult(await Task.FromResult(Todos));
+            var query = new TableQuery<TodoTableEntity>();
+            var segment = await todoTable.ExecuteQuerySegmentedAsync(query, null);
+            return new OkObjectResult(segment.Select(Mappings.MapToTodo));
         }
 
         [FunctionName("AddTodo")]
         public static async Task<IActionResult> AddTodo(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route ="todo")]HttpRequest req,
+            [Table("todos", "AzureWebJobsStorage")] IAsyncCollector<TodoTableEntity> todoTable,
             ILogger logger)
         {
             logger.LogInformation("Creating a new todo");
@@ -42,52 +47,66 @@ namespace TodoAppServerlessFuncs.Functions
                 Description = todoCreateModel.Description
             };
 
-            Todos.Add(todo);
+            await todoTable.AddAsync(todo.MapToTableEntity());
             return new OkObjectResult(todo);
         }
 
         [FunctionName("UpdateTodo")]
         public static async Task<IActionResult> UpdateTodo(
             [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route ="todo/{id}")]HttpRequest req,
+            [Table("todos", "AzureWebJobsStorage")] CloudTable todoTable,
             ILogger logger, string id)
         {
             logger.LogInformation("Updating todo");
       
             var updateModel = await JsonSerializer.DeserializeAsync<TodoUpdateModel>(req.Body, options);
 
-            var todo = Todos.FirstOrDefault(t => t.Id == id);
-            if (todo == null) return new NotFoundResult();
+            var findOperation = TableOperation.Retrieve<TodoTableEntity>("TODO", id);
+            var findResult = await todoTable.ExecuteAsync(findOperation);
+            if (findResult.Result == null) return new NotFoundResult();
 
-            todo.IsCompleted = updateModel.IsCompleted;
+            TodoTableEntity existingTodo = (TodoTableEntity)findResult.Result;
+            existingTodo.IsCompleted = updateModel.IsCompleted;
 
-            return new OkObjectResult(todo);
+            var replaceOperation = TableOperation.Replace(existingTodo);
+            await todoTable.ExecuteAsync(replaceOperation);
+
+            return new OkObjectResult(existingTodo.MapToTodo());
         }
 
         [FunctionName("GetTodoById")]
         public static async Task<IActionResult> GetTodoById(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route ="todo/{id}")]HttpRequest req,
+            [Table("todos", "TODO", "{id}", Connection ="AzureWebJobsStorage")] TodoTableEntity todoTableEntity,
             ILogger logger, string id)
         {
             logger.LogInformation("Get a todo by id");
-            var todo = Todos.FirstOrDefault(t => t.Id == id);
-            if (todo == null) return new NotFoundResult();
+            
+            if (todoTableEntity == null) return new NotFoundResult();
 
-            return new OkObjectResult(await Task.FromResult(todo));
+            return new OkObjectResult(await Task.FromResult(todoTableEntity.MapToTodo()));
 
         }
 
         [FunctionName("DeleteTodo")]
-        public static IActionResult DeleteTodo(
+        public static async Task<IActionResult> DeleteTodo(
             [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route ="todo/{id}")]HttpRequest req,
+            [Table("todos", Connection = "AzureWebJobsStorage")] CloudTable todoTable,
             ILogger logger, string id)
         {
             logger.LogInformation("Delete a todo by id");
+            var deleteOperation = TableOperation.Delete(new TableEntity() { PartitionKey = "TODO", RowKey = id, ETag = "*" });
 
-            var todo = Todos.FirstOrDefault(t => t.Id == id);
-            if (todo == null) return new NotFoundResult();
+            try
+            {
+                var deleteResult = await todoTable.ExecuteAsync(deleteOperation);
+            }
+            catch (StorageException e) when (e.RequestInformation.HttpStatusCode == 404)
+            {
 
-
-            Todos.Remove(todo);
+                return new NotFoundResult();
+            }
+           
             return new OkResult();
         }
     }
