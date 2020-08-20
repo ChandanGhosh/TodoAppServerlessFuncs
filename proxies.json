@@ -1,0 +1,20 @@
+﻿{
+  "$schema": "https://json.schemastore.org/proxies",
+  "proxies": {
+    "proxyHomePage": {
+      "matchCondition": {
+        "methods": [ "GET" ],
+        "route": "/"
+      },
+      "backendUri": "https://serverlesstodoappstorage.blob.core.windows.net/website/index.html"
+    },
+    "proxyContent": {
+      "matchCondition": {
+        "methods": [ "GET" ],
+        "route": "/content/{*restOfPath}"
+      },
+      "backendUri": "https://serverlesstodoappstorage.blob.core.windows.net/website/content/{restOfPath}"
+    }
+
+  }
+}
