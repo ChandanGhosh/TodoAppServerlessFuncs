@@ -13,6 +13,7 @@ using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using Microsoft.Azure.Cosmos.Table;
+using Microsoft.Azure.Storage.Blob;
 
 namespace TodoAppServerlessFuncs.Functions
 {
@@ -96,6 +97,7 @@ namespace TodoAppServerlessFuncs.Functions
         public static async Task<IActionResult> DeleteTodo(
             [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route ="todo/{id}")]HttpRequest req,
             [Table("todos", Connection = "AzureWebJobsStorage")] CloudTable todoTable,
+            [Blob("todos", Connection = "AzureWebJobsStorage")] CloudBlobContainer cloudBlobContainer,
             ILogger logger, string id)
         {
             logger.LogInformation("Delete a todo by id");
@@ -105,10 +107,11 @@ namespace TodoAppServerlessFuncs.Functions
             try
             {
                 var deleteResult = await todoTable.ExecuteAsync(deleteOperation);
+                var blockBlob = cloudBlobContainer.GetBlockBlobReference($"{id}.txt");
+                _ = await blockBlob.DeleteIfExistsAsync();
             }
             catch (StorageException e) when (e.RequestInformation.HttpStatusCode == 404)
             {
-
                 return new NotFoundResult();
             }
            

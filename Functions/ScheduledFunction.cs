@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos.Table;
 using Microsoft.Azure.Cosmos.Table.Queryable;
+using Microsoft.Azure.Storage.Blob;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Extensions.Logging;
@@ -15,8 +16,9 @@ namespace TodoAppServerlessFuncs.Functions
     {
         [FunctionName("ScheduledFunction")]
         public static async Task Run(
-            [TimerTrigger("0 */1 * * * *")]TimerInfo myTimer, 
+            [TimerTrigger("0 */15 * * * *")]TimerInfo myTimer, 
             [Table("todos", Connection = "AzureWebJobsStorage")] CloudTable todoTable,
+            [Blob("todos", Connection = "AzureWebJobsStorage")] CloudBlobContainer cloudBlobContainer,
             ILogger log)
         {
             log.LogInformation($"Deleting the Todos which are already completed");
@@ -25,13 +27,17 @@ namespace TodoAppServerlessFuncs.Functions
             var completedResults = todoTable.ExecuteQuery(query);
 
             var deletedCount = 0;
-            foreach (var completedTodos in completedResults)
+            foreach (var completedTodo in completedResults)
             {
-                await todoTable.ExecuteAsync(TableOperation.Delete(completedTodos));
+                await todoTable.ExecuteAsync(TableOperation.Delete(completedTodo));
+                var blockBlob = cloudBlobContainer.GetBlockBlobReference($"{completedTodo.RowKey}.txt");
+                _ = await blockBlob.DeleteIfExistsAsync();
                 deletedCount++;
             }
+
             
-            log.LogInformation($"Deleted {deletedCount} items at {DateTime.Now}");
+            
+            log.LogInformation($"Deleted {deletedCount} items at {DateTime.Now} from Table and blob container.");
         }
     }
 }

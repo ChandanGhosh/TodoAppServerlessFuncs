@@ -3,6 +3,7 @@
   "Values": {
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "AzureWebJobsDashboard": "UseDevelopmentStorage=true",
+    "WEB_HOST": "http://127.0.0.1:10000/devstoreaccount1/website",
     "FUNCTIONS_WORKER_RUNTIME": "dotnet"
   },
   "Host": {
